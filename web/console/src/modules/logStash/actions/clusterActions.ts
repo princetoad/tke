@@ -3,9 +3,7 @@ import { generateFetcherActionCreator } from '@tencent/qcloud-redux-fetcher';
 import { generateQueryActionCreator } from '@tencent/qcloud-redux-query';
 
 import { resourceConfig } from '../../../../config';
-import {
-  Cluster, ClusterFilter, CreateResource, Resource, ResourceFilter, ResourceInfo
-} from '../../common/models';
+import { Cluster, ClusterFilter, CreateResource, Resource, ResourceFilter, ResourceInfo } from '../../common/models';
 import { CommonAPI } from '../../common/webapi';
 import * as ActionType from '../constants/ActionType';
 import { FFReduxActionName } from '../constants/Config';
@@ -70,10 +68,15 @@ const fetchClusterActions = generateFetcherActionCreator({
     let agents = await CommonAPI.fetchLogagents();
     let clusterHasLogAgent = {};
     for (let agent of agents.records) {
-      clusterHasLogAgent[agent.spec.clusterName] = agent.metadata.name;
+      clusterHasLogAgent[agent.spec.clusterName] = { name: agent.metadata.name, status: agent.status.phase };
     }
     for (let cluster of response.records) {
-      cluster.spec.logAgentName = clusterHasLogAgent[cluster.metadata.name];
+      let logagent = clusterHasLogAgent[cluster.metadata.name];
+      if (logagent) {
+        let { name, status } = logagent;
+        cluster.spec.logAgentName = name;
+        cluster.spec.logAgentStatus = status;
+      }
     }
 
     return response;
@@ -118,10 +121,10 @@ const restActions = {
       let defaultProjectName = projectSelection
         ? projectSelection
         : route.queries['projectName']
-          ? route.queries['projectName']
-          : userProjectList.length
-            ? userProjectList[0].name
-            : '';
+        ? route.queries['projectName']
+        : userProjectList.length
+        ? userProjectList[0].name
+        : '';
       defaultProjectName && dispatch(clusterActions.selectProject(defaultProjectName));
     };
   },
@@ -276,7 +279,7 @@ const restActions = {
       };
       let response = await CommonAPI.deleteLogAgent(resource, cluster.spec.logAgentName);
     };
-  },
+  }
 };
 
 export const clusterActions = extend({}, queryClusterActions, fetchClusterActions, restActions);

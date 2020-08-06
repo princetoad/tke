@@ -88,21 +88,6 @@ export class EditOriginContainerPanel extends React.Component<RootProps, any> {
 
         {isSelectedAllNamespace === 'selectOne' && this._renderContainerLogList()}
 
-        {window.location.href.includes('/tkestack-project') ||
-        isSelectedAllNamespace === 'selectOne' && (
-          <Bubble content={!canAdd ? tip : null} placement="right">
-            <a
-              href="javascript:;"
-              className={classnames('add-btn', { disabled: !canAdd })}
-              onClick={() => {
-                canAdd && actions.editLogStash.addContainerLog();
-              }}
-              style={{ marginTop: '10px' }}
-            >
-              {t('添加Namespace')}
-            </a>
-          </Bubble>
-        )}
       </FormPanel.Item>
     );
   }

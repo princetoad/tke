@@ -280,7 +280,8 @@ export class EditAddonPanel extends React.Component<RootProps, EdtiAddonPanelSta
             bordered
             columns={columns}
             records={finalAddonList}
-            rowDisabled={record => isAlreadyOpened(record) || record.type === 'LogCollector'}
+            // rowDisabled={record => isAlreadyOpened(record) || record.type === 'LogCollector'}
+            rowDisabled={record => isAlreadyOpened(record)}
             addons={[
               stylize({
                 headStyle: { display: 'none' },

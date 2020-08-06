@@ -84,7 +84,8 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
     let { canCreate, tip, ifLogDaemonset } = isCanCreateLogStash(
       clusterSelection[0],
       logList.data.records,
-      isDaemonsetNormal
+      isDaemonsetNormal,
+      isOpenLogStash
     );
 
     /** 渲染日志类型 */
@@ -165,7 +166,7 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
                   </ExternalLink>
                 </Trans>
               </Text>
-              {!isOpenLogStash && (
+              {!(clusterSelection && clusterSelection[0] && clusterSelection[0].spec.logAgentName || isOpenLogStash) && (
                 <Text theme="danger">
                   <Trans>
                     该集群未开启日志收集功能，
@@ -383,6 +384,8 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
               };
             }
           );
+          // 按照v1.3的日志采集规范，指定容器只允许设置一个ns，这里要把namespace改写成这里指定的具体的ns，而不是kube-system
+          namespace = namespaces[0] && namespaces[0].namespace;
         }
         let containerLogInput: ContainerLogInput = {
           container_log_input: {

@@ -11,7 +11,11 @@ import { Cluster } from '../../common/models';
 import { includes } from '../../common/utils';
 import { allActions } from '../actions';
 import {
-    canCreateLogStash, canCreateLogStashInLogDaemonset, canFetchLogList, collectorStatus, logModeMap
+  canCreateLogStash,
+  canCreateLogStashInLogDaemonset,
+  canFetchLogList,
+  collectorStatus,
+  logModeMap
 } from '../constants/Config';
 import { Log } from '../models';
 import { LogDaemonSetStatus } from '../models/LogDaemonset';
@@ -31,27 +35,72 @@ export const canSearchTip = phase => {
   return phase === '404' ? t('请先开通日志采集规则') : t(`当前日志采集器（${phase}）不健康`);
 };
 
-/** 判断当前集群能够进行新建日志采集规则的操作 */
-export const isCanCreateLogStash = (clusterInfo: Cluster, logList: Log[], isDaemonsetNormal: LogDaemonSetStatus) => {
-  let canCreate = false,
+// /** 判断当前集群能够进行新建日志采集规则的操作 */
+// export const isCanCreateLogStash = (clusterInfo: Cluster, logList: Log[], isDaemonsetNormal: LogDaemonSetStatus) => {
+//   let canCreate = false,
+//     tip = '',
+//     ifLogDaemonset = false;
+//   // 集群状态
+//   if (clusterInfo) {
+//     canCreate = includes(canCreateLogStash, clusterInfo.status.phase);
+//     tip = !canCreate ? canCreateTip.canNotCreate : '';
+//     if (canCreate) {
+//       // 兼容新旧日志组件并存
+//       canCreate = clusterInfo.spec.logAgentName || includes(canCreateLogStashInLogDaemonset, isDaemonsetNormal.phase);
+//       !canCreate && (tip = canCreateTip.canNotCreateInLogDaemonset(isDaemonsetNormal.phase));
+//       ifLogDaemonset = !canCreate; //标记是否是因为logDaemonset的状态不是runnig所以才不能创建的
+//     }
+//   } else {
+//     canCreate = false;
+//     tip = canCreateTip.empty;
+//   }
+//
+//   // 目前限制一个集群下 日志采集规则为100个
+//   if (logList.length >= 100) {
+//     canCreate = false;
+//     tip = canCreateTip.max;
+//   }
+//
+//   return { canCreate, tip, ifLogDaemonset };
+// };
+
+export const isCanCreateLogStash = (
+  clusterInfo: Cluster,
+  logList: Log[],
+  isDaemonsetNormal: LogDaemonSetStatus,
+  isOpenLogStash
+) => {
+  let canCreate = true,
     tip = '',
     ifLogDaemonset = false;
-  if (clusterInfo) {
-    canCreate = includes(canCreateLogStash, clusterInfo.status.phase);
-    tip = !canCreate ? canCreateTip.canNotCreate : '';
-    if (canCreate) {
-      // 兼容新旧日志组件并存
-      canCreate = clusterInfo.spec.logAgentName || includes(canCreateLogStashInLogDaemonset, isDaemonsetNormal.phase);
-      !canCreate && (tip = canCreateTip.canNotCreateInLogDaemonset(isDaemonsetNormal.phase));
-      ifLogDaemonset = !canCreate; //标记是否是因为logDaemonset的状态不是runnig所以才不能创建的
-    }
-  } else {
+  // 没有选择集群
+  if (!clusterInfo) {
     canCreate = false;
     tip = canCreateTip.empty;
-  }
-
-  // 目前限制一个集群下 日志采集规则为100个
-  if (logList.length >= 100) {
+  } else if (!includes(canCreateLogStash, clusterInfo.status.phase)) {
+    // 集群没有运行
+    canCreate = false;
+    tip = canCreateTip.canNotCreate;
+  } else if (!clusterInfo.spec.logAgentName && !isOpenLogStash) {
+    // 日志组件是否安装
+    canCreate = false;
+    tip = '日志组件尚未安装，请先安装LogAgent组件';
+  } else if (
+    !(
+      (clusterInfo.spec.logAgentName && clusterInfo.spec.logAgentStatus === 'Running') ||
+      (isOpenLogStash && includes(canCreateLogStashInLogDaemonset, isDaemonsetNormal.phase))
+    )
+  ) {
+    // 日志组件的状态是否正常。安装了logAgent并且状态是运行的，或者安装了logCollector但是状态是运行的都可以创建
+    canCreate = false;
+    if (clusterInfo.spec.logAgentName) {
+      tip = canCreateTip.canNotCreateInLogDaemonset(clusterInfo.spec.logAgentStatus);
+    } else {
+      tip = canCreateTip.canNotCreateInLogDaemonset(isDaemonsetNormal.phase);
+    }
+    ifLogDaemonset = true; //标记是否是因为日志组件的状态不是runnig所以才不能创建的
+  } else if (logList.length >= 100) {
+    // 目前限制一个集群下 日志采集规则为100个
     canCreate = false;
     tip = canCreateTip.max;
   }
@@ -59,10 +108,53 @@ export const isCanCreateLogStash = (clusterInfo: Cluster, logList: Log[], isDaem
   return { canCreate, tip, ifLogDaemonset };
 };
 
+export const isCanInstallLogAgent = (clusterInfo: Cluster) => {
+  let canInstall = true,
+    tip = '';
+  // 没有选择集群
+  if (!clusterInfo) {
+    canInstall = false;
+    tip = '待选择集群';
+  } else if (!includes(canCreateLogStash, clusterInfo.status.phase)) {
+    // 集群没有运行
+    canInstall = false;
+    tip = '请检查集群状态是否为 Running';
+  } else if (clusterInfo.spec.logAgentName && clusterInfo.spec.logAgentStatus === 'Running') {
+    // 日志组件是否安装
+    canInstall = false;
+    tip = 'LogAgent组件已安装';
+  }
+
+  return { canInstall, tip };
+};
+
+export const isCanDeleteLogAgent = (clusterInfo: Cluster, isOpenLogStash) => {
+  let canDelete = false,
+    tip = '';
+  // 没有选择集群
+  if (!clusterInfo) {
+    canDelete = false;
+    tip = '待选择集群';
+  } else if (!includes(canCreateLogStash, clusterInfo.status.phase)) {
+    // 集群没有运行
+    canDelete = false;
+    tip = '请检查集群状态是否为 Running';
+  } else if (clusterInfo.spec.logAgentName || isOpenLogStash) {
+    // 日志组件是否安装
+    canDelete = true;
+    tip = '';
+  }
+
+  return { canDelete, tip };
+};
+
 const mapDispatchToProps = dispatch =>
   Object.assign({}, bindActionCreators({ actions: allActions }, dispatch), { dispatch });
 
-@connect(state => state, mapDispatchToProps)
+@connect(
+  state => state,
+  mapDispatchToProps
+)
 export class LogStashActionPanel extends React.Component<RootProps, any> {
   render() {
     let {
@@ -70,6 +162,7 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
       clusterSelection,
       logQuery,
       logList,
+      isOpenLogStash,
       isDaemonsetNormal,
       route,
       namespaceList,
@@ -81,12 +174,20 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
       logAgentName = clusterSelection[0].spec.logAgentName;
     }
     // 判断当前是否能够新建日志收集规则
-    let { canCreate, tip } = isCanCreateLogStash(clusterSelection[0], logList.data.records, isDaemonsetNormal);
+    let { canCreate, tip } = isCanCreateLogStash(
+      clusterSelection[0],
+      logList.data.records,
+      isDaemonsetNormal,
+      isOpenLogStash
+    );
     let ifFetchLogList = logAgentName || includes(canFetchLogList, isDaemonsetNormal.phase);
     let handleNamespaceSwitched = namespaceSelection => {
       let namespaceFound = namespaceList.data.records.find(item => item.namespace === namespaceSelection);
       actions.cluster.selectClusterFromNamespace(namespaceFound.cluster);
     };
+    let { canInstall, tip: tipInstall } = isCanInstallLogAgent(clusterSelection[0]);
+    let { canDelete, tip: tipDelete } = isCanDeleteLogAgent(clusterSelection[0], isOpenLogStash);
+
     return (
       <Table.ActionPanel>
         <Justify
@@ -94,9 +195,24 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
             <React.Fragment>
               <Bubble content={!canCreate ? tip : null}>
                 <Button type="primary" disabled={!canCreate} onClick={this._handleCreate.bind(this)}>
-                  {t('新建')}
+                  {t('新建日志采集规则')}
                 </Button>
               </Bubble>
+              <Bubble content={!canInstall ? tipInstall : null}>
+                <Button type="primary" disabled={!canInstall} onClick={this._handleInstall.bind(this)}>
+                  {t('安装日志组件')}
+                </Button>
+              </Bubble>
+              <Bubble content={!canDelete ? tipDelete : null}>
+                <Button type="primary" disabled={!canDelete} onClick={this._handleDelete.bind(this)}>
+                  {t('删除日志组件')}
+                </Button>
+              </Bubble>
+              <Button
+                icon="refresh"
+                title={t('刷新')}
+                onClick={() => actions.cluster.applyFilter({})}
+              />
             </React.Fragment>
           }
           right={
@@ -188,11 +304,25 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
   private _handleCreate() {
     let { actions, isOpenLogStash, route, clusterSelection } = this.props,
       urlParams = router.resolve(route);
-    if (clusterSelection && clusterSelection[0] && clusterSelection[0].spec.logAgentName || isOpenLogStash) {
+    if ((clusterSelection && clusterSelection[0] && clusterSelection[0].spec.logAgentName) || isOpenLogStash) {
       router.navigate(Object.assign({}, urlParams, { mode: 'create' }), route.queries);
     } else {
       actions.workflow.authorizeOpenLog.start();
     }
+  }
+
+  private _handleInstall() {
+    let { actions, isOpenLogStash, route, clusterSelection } = this.props,
+      urlParams = router.resolve(route);
+    actions.cluster.enableLogAgent(clusterSelection[0]);
+    actions.cluster.applyFilter({});
+  }
+
+  private _handleDelete() {
+    let { actions, isOpenLogStash, route, clusterSelection } = this.props,
+      urlParams = router.resolve(route);
+    actions.cluster.disableLogAgent(clusterSelection[0]);
+    actions.cluster.applyFilter({});
   }
 
   /** 下载操作 */

@@ -69,30 +69,6 @@ export class EditOriginContainerItemPanel extends React.Component<ContainerItemP
     return (
       <FormPanel fixed isNeedCard={false} style={{ minWidth: 600, padding: '30px' }}>
         <div className="run-docker-box" style={containerLog.collectorWay === 'workload' ? { minWidth: '750px' } : {}}>
-          {window.location.href.includes('/tkestack-project') ||
-          <div className="justify-grid">
-            <div className="col">
-              <span />
-            </div>
-            <div className="col">
-              <LinkButton
-                disabled={!canSave}
-                tip={t('保存')}
-                errorTip={t('请先完成待编辑项')}
-                onClick={() => this._handleSaveContainerLog(canSave, containerLogIndex)}
-              >
-                <i className="icon-submit-gray" />
-              </LinkButton>
-              <LinkButton
-                disabled={!canDelete}
-                tip={t('删除')}
-                errorTip={t('不可删除，至少创建一个容器')}
-                onClick={() => actions.editLogStash.deleteContainerLog(containerLogIndex)}
-              >
-                <i className="icon-cancel-icon" />
-              </LinkButton>
-            </div>
-          </div>}
           <div className="edit-param-list">
             <div className="param-box" style={{ paddingBottom: '0' }}>
               <div className="param-bd">
