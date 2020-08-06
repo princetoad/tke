@@ -24,7 +24,7 @@ import { RootProps } from './LogStashApp';
 
 /** 新建日志收集规则按钮的提示内容 */
 export const canCreateTip = {
-  empty: t('请先创建一个集群'),
+  empty: t('请先创建或者选择一个集群'),
   canNotCreate: t('当前集群状态下无法新建日志采集规则'),
   max: t('当前集群最多可创建 100 个日志采集规则'),
   canNotCreateInLogDaemonset: phase => t(`当前日志采集器（${phase}）状态下无法创建日志采集规则`)
@@ -124,7 +124,7 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
             <React.Fragment>
               <Bubble content={!canCreate ? tip : null}>
                 <Button type="primary" disabled={!canCreate} onClick={this._handleCreate.bind(this)}>
-                  {t('新建日志采集规则')}
+                  {t('新建')}
                 </Button>
               </Bubble>
             </React.Fragment>

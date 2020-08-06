@@ -4,8 +4,13 @@ import { t } from '@tencent/tea-app/lib/i18n';
 
 import { resourceConfig } from '../../../config';
 import {
-    Method, operationResult, reduceK8sQueryString, reduceK8sRestfulPath, reduceNetworkRequest,
-    reduceNetworkWorkflow, requestMethodForAction
+  Method,
+  operationResult,
+  reduceK8sQueryString,
+  reduceK8sRestfulPath,
+  reduceNetworkRequest,
+  reduceNetworkWorkflow,
+  requestMethodForAction
 } from '../../../helpers';
 import { CreateResource } from '../cluster/models';
 import { Namespace, NamespaceFilter, RequestParams, ResourceInfo, Cluster } from '../common/models';
@@ -56,7 +61,9 @@ export async function fetchNamespaceList(
   let namespaceList = [];
   if (!isClearData) {
     // 获取k8s的url
-    let url = projectName ? reduceK8sRestfulPath({ resourceInfo, specificName: projectName, extraResource: 'namespaces' }) : reduceK8sRestfulPath({ resourceInfo });
+    let url = projectName
+      ? reduceK8sRestfulPath({ resourceInfo, specificName: projectName, extraResource: 'namespaces' })
+      : reduceK8sRestfulPath({ resourceInfo });
     if (search) {
       url = url + '/' + search;
     }
@@ -73,14 +80,14 @@ export async function fetchNamespaceList(
       let clusterInfo: Cluster = {
         id: uuid(),
         metadata: {
-          name: item.spec.clusterName,
+          name: item.spec.clusterName
         },
         spec: {
-          displayName: item.spec.clusterDisplayName,
+          displayName: item.spec.clusterDisplayName
         },
         status: {
           version: item.spec.clusterVersion,
-          phase: 'Running', // TODO: 让namespace接口返回集群的phase
+          phase: 'Running' // TODO: 让namespace接口返回集群的phase
         }
       };
       return clusterInfo;
@@ -212,8 +219,24 @@ export async function fetchResourceList(
  */
 export async function modifyLogStash(resources: CreateResource[], regionId: number) {
   try {
-    let { clusterId, logAgentName, namespace, mode, jsonData, resourceInfo, isStrategic = true, resourceIns } = resources[0];
-    let url = reduceK8sRestfulPath({ resourceInfo, namespace, specificName: resourceIns, clusterId, logAgentName, isSpetialNamespace: window.location.href.includes('tkestack-project') });
+    let {
+      clusterId,
+      logAgentName,
+      namespace,
+      mode,
+      jsonData,
+      resourceInfo,
+      isStrategic = true,
+      resourceIns
+    } = resources[0];
+    let url = reduceK8sRestfulPath({
+      resourceInfo,
+      namespace: namespace.replace(new RegExp(`^${clusterId}-`), ''),
+      specificName: resourceIns,
+      clusterId,
+      logAgentName,
+      isSpetialNamespace: true
+    });
     // 构建参数
     let method = requestMethodForAction(mode);
     let params: RequestParams = {

@@ -464,7 +464,7 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
         apiVersion: (logResourceInfo.group ? logResourceInfo.group + '/' : '') + logResourceInfo.version,
         metadata: {
           name: logStashName,
-          namespace
+          namespace: namespace.replace(new RegExp(`^${clusterId}-`), '')
         },
         spec: {
           input: inputType,
@@ -488,13 +488,13 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
       let resource: CreateResource = {
         id: uuid(),
         resourceInfo: logResourceInfo,
-        mode: mode === 'update' ? 'modify' : mode, //更新方式为put，不是patch，update对应的为patch，modify对应为put
+        mode: mode === 'update' ? 'modify' : mode, // 更新方式为put，不是patch，update对应的为patch，modify对应为put
         namespace,
         clusterId,
         logAgentName,
         jsonData,
         isStrategic: false,
-        resourceIns: mode === 'update' ? logStashName : '' //更新的需要需要带上具体的name
+        resourceIns: mode === 'update' ? logStashName : '' // 更新的需要需要带上具体的name
       };
       actions.workflow.modifyLogStash.start([resource], +rid);
       actions.workflow.modifyLogStash.perform();
