@@ -312,8 +312,10 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
 
   private async _handleSubmit(mode) {
     let { actions, route, logStashEdit, clusterVersion, logSelection, clusterSelection } = this.props;
-    let { rid, clusterId } = route.queries;
+    // let { rid, clusterId } = route.queries;
+    let { rid } = route.queries;
     let { logAgentName } = clusterSelection[0].spec;
+    let { name: clusterId } = clusterSelection[0].metadata;
     let {
       logStashName,
       logMode,
@@ -354,7 +356,8 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
     );
 
     if (valResult) {
-      let { rid, clusterId } = route.queries;
+      // let { rid, clusterId } = route.queries;
+      let { rid } = route.queries;
 
       let logResourceInfo = resourceConfig(clusterVersion)['logcs'];
 
@@ -378,7 +381,7 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
                 });
               });
               return {
-                namespace: containerLog.namespaceSelection,
+                namespace: containerLog.namespaceSelection.replace(new RegExp(`^${clusterId}-`), ''),
                 all_containers: containerLog.collectorWay === 'container',
                 workloads
               };
@@ -489,7 +492,7 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
         id: uuid(),
         resourceInfo: logResourceInfo,
         mode: mode === 'update' ? 'modify' : mode, // 更新方式为put，不是patch，update对应的为patch，modify对应为put
-        namespace,
+        namespace: namespace.replace(new RegExp(`^${clusterId}-`), ''),
         clusterId,
         logAgentName,
         jsonData,
