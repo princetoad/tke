@@ -28,7 +28,6 @@ export async function checkStashNameIsExist(
 ) {
   let resourceInfo = resourceConfig(clusterVersion)['logcs'];
   let url = reduceK8sRestfulPath({
-    isSpetialNamespace: true,
     resourceInfo,
     clusterId,
     namespace: namespace.replace(new RegExp(`^${clusterId}-`), ''),
@@ -99,10 +98,12 @@ export async function fetchNamespaceList(
         if (list.items) {
           namespaceList = list.items.map(item => {
             return {
-              clusterId,
+              clusterId, // 注意这个在业务侧下是没有值的
               cluster: getCluster(item),
               id: uuid(),
-              namespace: item.metadata.name
+              name: item.spec.namespace || item.metadata.name, // 后面是平台侧
+              namespace: item.spec.namespace || item.metadata.name,
+              namespaceValue: item.metadata.name // 使用namespaceValue 保存fullName
             };
           });
         } else {
@@ -110,7 +111,9 @@ export async function fetchNamespaceList(
             clusterId,
             cluster: getCluster(list),
             id: uuid(),
-            name: list.metadata.name
+            name: list.spec.namespace || list.metadata.name,
+            namespace: list.spec.namespace || list.metadata.name,
+            namespaceValue: list.metadata.name
           });
         }
       }
@@ -235,7 +238,6 @@ export async function modifyLogStash(resources: CreateResource[], regionId: numb
       specificName: resourceIns,
       clusterId,
       logAgentName,
-      isSpetialNamespace: true
     });
     // 构建参数
     let method = requestMethodForAction(mode);

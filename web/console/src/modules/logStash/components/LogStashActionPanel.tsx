@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import { bindActionCreators } from '@tencent/ff-redux';
 import { t, Trans } from '@tencent/tea-app/lib/i18n';
-import { Bubble, Button, Justify, SearchBox, Table, Text } from '@tencent/tea-component';
+import { Bubble, Button, Justify, SearchBox, Select, Table, Text } from '@tencent/tea-component';
 
 import { dateFormatter, downloadCsv } from '../../../../helpers';
 import { SelectList } from '../../../../src/modules/common';
@@ -87,6 +87,11 @@ const mapDispatchToProps = dispatch =>
   mapDispatchToProps
 )
 export class LogStashActionPanel extends React.Component<RootProps, any> {
+  state = {
+    isBusiness: window.location.href.includes('tkestack-project'),
+    namespace: this.props.namespaceSelection
+  };
+
   render() {
     let {
       actions,
@@ -96,9 +101,10 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
       isOpenLogStash,
       isDaemonsetNormal,
       route,
-      namespaceList,
+      namespaceList: namespaceRecords,
       namespaceSelection
     } = this.props;
+    let { isBusiness } = this.state;
 
     let logAgentName = '';
     if (clusterSelection && clusterSelection[0]) {
@@ -113,9 +119,41 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
     );
     let ifFetchLogList = logAgentName || includes(canFetchLogList, isDaemonsetNormal.phase);
     let handleNamespaceSwitched = namespaceSelection => {
-      let namespaceFound = namespaceList.data.records.find(item => item.namespace === namespaceSelection);
+      let namespaceFound = namespaceRecords.data.records.find(item => item.namespace === namespaceSelection);
       actions.cluster.selectClusterFromNamespace(namespaceFound.cluster);
     };
+    let namespaces = [];
+    let namespaceList = [];
+    let groups = {};
+    if (!isBusiness) {
+      namespaces = namespaceRecords.data.records.map(item => ({
+        name: item.name,
+      }));
+      namespaceList = namespaces.map(({ name }) => ({
+        // value: fullName,
+        value: name,
+        text: name
+      }));
+    } else {
+      namespaces = namespaceRecords.data.records.map(item => ({
+        name: item.namespace,
+        fullName: item.namespaceValue,
+        clusterName: item.cluster.metadata.name,
+        clusterDisplayName: item.cluster.spec.displayName
+      }));
+      namespaceList = namespaces.map(({ name, clusterName, fullName }) => ({
+        value: fullName,
+        groupKey: clusterName,
+        text: name
+      }));
+      groups = namespaces.reduce((accu, item, index, arr) => {
+        let { clusterName, clusterDisplayName } = item;
+        if (!accu[clusterName]) {
+          accu[clusterName] = clusterDisplayName;
+        }
+        return accu;
+      }, {});
+    }
 
     return (
       <Table.ActionPanel>
@@ -136,36 +174,17 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
                   {t('命名空间')}
                 </Text>
 
-                <SelectList
+                <Select
+                  searchable
+                  boxSizeSync
+                  // groups={isPlatform ? undefined : groups}
+                  size="m"
+                  type="simulate"
+                  appearence="button"
+                  options={namespaceList}
+                  groups={groups}
                   value={namespaceSelection}
-                  recordData={namespaceList}
-                  valueField="namespace"
-                  textField="namespace"
-                  className="tc-15-select m"
-                  onSelect={value => {
-                    actions.namespace.selectNamespace(value);
-                    // 兼容业务侧对集群的处理，从命名空间关联到集群
-                    if (window.location.href.includes('tkestack-project')) {
-                      handleNamespaceSwitched(value);
-                    }
-                    if (ifFetchLogList) {
-                      actions.log.applyFilter({
-                        clusterId: route.queries['clusterId'],
-                        logAgentName,
-                        namespace: value
-                      });
-                    } else {
-                      actions.log.fetch({
-                        noCache: true
-                      });
-                    }
-                  }}
-                  name="Namespace"
-                  tipPosition="right"
-                  style={{
-                    display: 'inline-block',
-                    padding: '0 10px'
-                  }}
+                  onChange={this.handleNamespaceChanged}
                 />
               </div>
               <Bubble
@@ -178,6 +197,7 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
                 }
               >
                 <SearchBox
+                  style={{ marginLeft: 8 }}
                   value={logQuery.keyword ? logQuery.keyword : ''}
                   onChange={actions.log.changeKeyword}
                   onSearch={value => {
@@ -213,6 +233,60 @@ export class LogStashActionPanel extends React.Component<RootProps, any> {
       </Table.ActionPanel>
     );
   }
+
+  getList = namespaceValue => {
+    let { actions, namespaceList, route, namespaceSelection, isDaemonsetNormal, clusterSelection } = this.props;
+    let { isBusiness } = this.state;
+    let {
+      namespace: { selectNamespace },
+      cluster: { selectClusterFromNamespace },
+      log: { applyFilter, fetch }
+    } = actions;
+    let logAgentName = '';
+    if (clusterSelection && clusterSelection[0]) {
+      logAgentName = clusterSelection[0].spec.logAgentName;
+    }
+    // 如果是平台侧的话，切换集群的时候地址栏中的clusterId参数已经体现出当前选中的集群了
+    let clusterId = route.queries['clusterId'];
+    // 兼容业务侧对集群的处理，从命名空间关联到集群
+    let namespace = namespaceValue;
+    if (isBusiness) {
+      let namespaceFound = namespaceList.data.records.find(item => item.namespaceValue === namespaceValue);
+      if (namespaceFound !== undefined) {
+        // 业务侧下再覆盖namespace
+        namespace = namespaceFound.namespace;
+        // 取附加到ns上的集群信息中的集群id
+        clusterId = namespaceFound.cluster.metadata.name;
+        logAgentName = namespaceFound.cluster.spec.logAgentName;
+        selectClusterFromNamespace(namespaceFound.cluster);
+      }
+    }
+    let ifFetchLogList = logAgentName || includes(canFetchLogList, isDaemonsetNormal.phase);
+    if (ifFetchLogList) {
+      applyFilter({
+        clusterId,
+        logAgentName,
+        namespace: namespace
+      });
+    } else {
+      fetch({
+        noCache: true
+      });
+    }
+  };
+
+  private handleNamespaceChanged = value => {
+    let { actions, namespaceList, route, namespaceSelection, isDaemonsetNormal, clusterSelection } = this.props;
+    let {
+      namespace: { selectNamespace },
+      cluster: { selectClusterFromNamespace },
+      log: { applyFilter, fetch }
+    } = actions;
+    this.setState({ namespace: value });
+    selectNamespace(value);
+
+    this.getList(value);
+  };
 
   /** 处理新建按钮的button */
   private _handleCreate() {

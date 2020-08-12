@@ -29,13 +29,13 @@ export const workflowActions = {
       {
         [OperationTrigger.Done]: (dispatch, getState) => {
           let deleteLog = getState().inlineDeleteLog;
-          let { route, namespaceFliter } = getState();
+          let { route, namespaceSelection } = getState();
           if (isSuccessWorkflow(deleteLog)) {
             dispatch(
               logActions.applyFilter({
                 clusterId: route.queries['clusterId'],
                 isClear: false,
-                namespace: namespaceFliter
+                namespace: namespaceSelection
               })
             );
             dispatch(workflowActions.inlineDeleteLog.reset());

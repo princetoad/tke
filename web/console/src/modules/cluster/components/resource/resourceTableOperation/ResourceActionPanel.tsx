@@ -36,7 +36,10 @@ interface ResouceActionPanelState {
 const mapDispatchToProps = dispatch =>
   Object.assign({}, bindActionCreators({ actions: allActions }, dispatch), { dispatch });
 
-@connect(state => state, mapDispatchToProps)
+@connect(
+  state => state,
+  mapDispatchToProps
+)
 export class ResourceActionPanel extends React.Component<RootProps, ResouceActionPanelState> {
   constructor(props, context) {
     super(props, context);
@@ -176,7 +179,7 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
     let options = namespaceList.data.recordCount
       ? namespaceList.data.records.map((item, index) => ({
           value: item.name,
-          text: item.name
+          text: item.displayName
         }))
       : [{ value: '', text: t('无可用命名空间'), disabled: true }];
     return (
@@ -206,11 +209,6 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
       { resourceInfo, resourceOption } = subRoot,
       { ffResourceList } = resourceOption;
 
-    // const defaultValue = [{attr: {key: 'namespace',name: '命名空间'},values: [{name: namespaceSelection}]}];
-
-    // attributes当中的 namepsace列表的values
-    // const namespaceValues = namespaceList.data.recordCount? namespaceList.data.records.map((namespace, index) => { return { key: namespace.id, name: namespace.name }; }) : [];
-
     // tagSearch的过滤选项
     const attributes = [
       {
@@ -219,19 +217,6 @@ export class ResourceActionPanel extends React.Component<RootProps, ResouceActio
         name: t('名称')
       }
     ];
-
-    // 这里是因为展示命名空间的话，不需要展示namespace
-    // let isNeedFetchNamespace = TellIsNeedFetchNS(resourceName);
-    // if (isNeedFetchNamespace) {
-    //   let tmp = {
-    //     type: 'single',
-    //     key: 'namespace',
-    //     name: '命名空间',
-    //     values: namespaceValues
-    //   };
-
-    //   attributes.push(tmp);
-    // }
 
     // 受控展示的values
     // const values = resourceQuery.search ? this.state.searchBoxValues : isNeedFetchNamespace ? defaultValue : [];

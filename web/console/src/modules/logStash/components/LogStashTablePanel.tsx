@@ -38,7 +38,6 @@ export class LogStashTablePanel extends React.Component<RootProps, any> {
       {
         key: 'name',
         header: t('名称'),
-        width: '15%',
         render: x => (
           <React.Fragment>
             <Text overflow>
@@ -68,25 +67,21 @@ export class LogStashTablePanel extends React.Component<RootProps, any> {
       {
         key: 'status',
         header: t('状态'),
-        width: '15%',
         render: x => this._getDaemonsetStatus()
       },
       {
         key: 'logType',
         header: t('类型'),
-        width: '15%',
         render: x => <Text overflow>{logModeMap[x.spec.input.type]}</Text>
       },
       {
         key: 'Namespace',
         header: t('命名空间'),
-        width: '15%',
         render: x => <Text overflow>{x.metadata.namespace}</Text>
       },
       {
         key: 'createdAt',
         header: t('创建时间'),
-        width: '15%',
         render: x => <Text>{dateFormatter(new Date(x.metadata.creationTimestamp), 'YYYY-MM-DD HH:mm:ss')}</Text>
       }
     ];

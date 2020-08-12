@@ -10,6 +10,7 @@ import { ContainerLogs, RootState } from '../models';
 import { router } from '../router';
 import * as WebAPI from '../WebAPI';
 import { resourceActions } from './resourceActions';
+import { clusterActions } from '@src/modules/logStash/actions/clusterActions';
 
 type GetState = () => RootState;
 

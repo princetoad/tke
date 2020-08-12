@@ -59,13 +59,15 @@ export async function fetchNamespaceList(query: QueryState<ResourceFilter>, reso
         namespaceList = list.items.map(item => {
           return {
             id: uuid(),
-            name: item.metadata.name
+            name: item.metadata.name,
+            displayName: item.metadata.name
           };
         });
       } else {
         namespaceList.push({
           id: uuid(),
-          name: list.metadata.name
+          name: list.metadata.name,
+          displayName: list.metadata.name
         });
       }
     }
@@ -449,11 +451,7 @@ export async function fetchResourceLogList(
 /**
  * 获取日志组件的组件名称
  */
-export async function fetchLogagentName(
-  resourceInfo: ResourceInfo,
-  clusterId: string,
-  k8sQueryObj: any = {}
-) {
+export async function fetchLogagentName(resourceInfo: ResourceInfo, clusterId: string, k8sQueryObj: any = {}) {
   let logAgent = {};
   let k8sUrl = reduceK8sRestfulPath({ resourceInfo });
   let queryString = reduceK8sQueryString({ k8sQueryObj, restfulPath: k8sUrl });
@@ -461,7 +459,7 @@ export async function fetchLogagentName(
   // 构建参数
   let params: RequestParams = {
     method: Method.get,
-    url,
+    url
   };
 
   let response = await reduceNetworkRequest(params, clusterId);
@@ -499,7 +497,7 @@ export async function fetchResourceLogHierarchy(query: LogHierarchyQuery) {
     method: Method.post,
     url,
     userDefinedHeader: {},
-    data: payload,
+    data: payload
   };
 
   let response = await reduceNetworkRequest(params, clusterId);
@@ -546,14 +544,14 @@ export async function fetchResourceLogContent(query: LogContentQuery) {
       pod,
       start,
       length,
-      filepath,
+      filepath
     }
   };
   let params: RequestParams = {
     method: Method.post,
     url,
     userDefinedHeader: {},
-    data: payload,
+    data: payload
   };
 
   let response = await reduceNetworkRequest(params, clusterId);
@@ -581,13 +579,13 @@ export async function downloadLogFile(query) {
     pod,
     namespace: namespace.replace(new RegExp(`^${clusterId}-`), ''),
     container,
-    path: filepath,
+    path: filepath
   };
   // 构建参数
   let params: RequestParams = {
     method: Method.post,
     url,
-    data: payload,
+    data: payload
   };
 
   let response = await reduceNetworkRequest(params, clusterId);
@@ -613,7 +611,9 @@ export async function applyResourceIns(resource: CreateResource[], regionId: num
   try {
     let { clusterId, yamlData, jsonData } = resource[0];
 
-    let url = `/${apiServerVersion.basicUrl}/${apiServerVersion.group}/${apiServerVersion.version}/clusters/${clusterId}/apply`;
+    let url = `/${apiServerVersion.basicUrl}/${apiServerVersion.group}/${
+      apiServerVersion.version
+    }/clusters/${clusterId}/apply`;
 
     // 这里是独立部署版 和 控制台共用的参数，只有是yamlData的时候才需要userdefinedHeader，如果是jaonData的话，就不需要了
     let userDefinedHeader: UserDefinedHeader = yamlData
@@ -838,7 +838,10 @@ export async function rollbackResourceIns(resource: CreateResource[], regionId: 
     /// #if project
     //业务侧ns eg: cls-xxx-ns 需要去除前缀
     if (resourceInfo.namespaces) {
-      namespace = namespace.split('-').splice(2).join('-');
+      namespace = namespace
+        .split('-')
+        .splice(2)
+        .join('-');
     }
     /// #endif
     // 因为回滚需要使用特定的apiVersion，故不用reduceK8sRestful

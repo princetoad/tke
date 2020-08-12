@@ -37,10 +37,10 @@ export class LogSettingTablePanel extends React.Component<RootProps, any> {
       {
         key: 'clusterId',
         header: t('集群ID/名称'),
-        width: '25%',
+        // width: '25%',
         render: item => (
           <React.Fragment>
-            <Text overflow>
+            <Text>
               {item.metadata.name}
             </Text>
           </React.Fragment>
@@ -49,13 +49,11 @@ export class LogSettingTablePanel extends React.Component<RootProps, any> {
       {
         key: 'status',
         header: t('状态'),
-        width: '25%',
         render: item => (item.spec.logAgentName ? <span>运行中</span> : <span>未开启</span>)
       },
       {
         key: 'logType',
         header: t('版本'),
-        width: '25%',
         render: item => <Text overflow>{item.spec.version}</Text>
       }
     ];
