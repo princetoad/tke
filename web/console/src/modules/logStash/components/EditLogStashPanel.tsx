@@ -251,11 +251,11 @@ export class EditLogStashPanel extends React.Component<RootProps, any> {
           </FormPanel.Item>
         )}
 
-        <EditOriginContainerPanel />
+        <EditOriginContainerPanel isEdit={mode === 'update'} />
 
         <EditOriginNodePanel />
 
-        <EditOriginContainerFilePanel />
+        <EditOriginContainerFilePanel isEdit={mode === 'update'} />
 
         <EditConsumerPanel />
         <FormPanel.Footer>

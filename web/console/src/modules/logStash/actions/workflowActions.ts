@@ -80,7 +80,7 @@ export const workflowActions = {
           dispatch(workflowActions.modifyLogStash.reset());
 
           //首页namespace重设
-          dispatch(namespaceActions.selectNamespace(''));
+          // dispatch(namespaceActions.selectNamespace(''));
 
           // 进行路由的跳转，回列表页
           let newRouteQueies = JSON.parse(
